@@ -13,11 +13,24 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Upload files to EC2 Home Directory
+    - name: Copy project to EC2 home
       uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.HOST_DNS }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         source: "."
-        target: ${{ secrets.TARGET_DIR }}
+        target: "/home/ubuntu/app"
+
+    - name: Deploy to Nginx directory
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST_DNS }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          sudo rm -rf /var/www/html/*
+          sudo cp -r /home/ubuntu/app/* /var/www/html/
+          sudo chown -R www-data:www-data /var/www/html
+          sudo chmod -R 755 /var/www/html
+          sudo systemctl restart nginx
